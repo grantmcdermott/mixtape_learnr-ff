@@ -1,6 +1,6 @@
 .DS_Store
 
 *.RHistory
-.RHistory
-
+*.Rhistory
 *.html
+.Rproj.user

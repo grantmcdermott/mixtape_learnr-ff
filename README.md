@@ -1,6 +1,54 @@
-# Teaching Resources for ***Causal Inference**: The Mixtape*
+# Causal Inference: The Mixtape (*Fast Forward* ed.)
 
-In this repository is a set of R Markdown scripts that follow [Causal Inference: The Mixtape](https://www.amazon.com/dp/0300251688).
+
+## Motivation
+
+This is a hard fork of Scott Cunningham's 
+[mixtape-learnr](https://github.com/scunning1975/mixtape_learnr) repo. The
+original repo and the associated [textbook](https://www.amazon.com/dp/0300251688) 
+are both outstanding pedagogical tools. So why the hard fork?
+
+The short reason is that, upon reading through the material, I realised I would
+write parts of the R code quite differently. (To be clear: There's no right or 
+wrong way! Software pluralism FTW.) So, this forked version is simply to be 
+consistent with the way I'd probably teach an econometrics course using Scott's
+super book. Keeping with the mixtape theme, this "fast forward" edition tries to
+be:
+
+- **Lean:** My version of the code tries to be very concise (whilst hopefully 
+maintaining readability). It also requires that users install and interact with 
+as few libraries as possible. Despite the obvious benefits, the sheer number of 
+available R libraries can be quite intimidating to new R users. My goal is to
+encourage familiarity through consistency. 
+
+- **Mean:** I also try to use best-in-class libraries/code with respect to
+performance. While none of the estimations or simulations in Scott's book 
+require particularly heavy lifting, the code herein should complete very 
+quickly. More importantly, the performance benefits should carry over to cases 
+where users adapt the code to their own, more computationally intensive 
+research problems.
+
+To achieve these dual goals, I lean heavily on three core libraries: 
+[`data.table`](https://rdatatable.gitlab.io/data.table), 
+[`fixest`](https://lrberge.github.io/fixest), and 
+[`ggplot2`](https://ggplot2.tidyverse.org). 
+While these three libraries get us 90% of the way towards replicating all of the 
+code examples in the book, we occasionally have to grab a specialty library for 
+some particular section (e.g. synthetic control). I also use the 
+[`haven`](https://haven.tidyverse.org) library to pull in the proprietary (boo!) 
+Stata data format files that Scott uses in his book. 
+
+You can install all of the necessary libraries simply by opening up the repo's R 
+project (click on the `mixtape_learnr-ff.Rproj` file) and running the following 
+line in your R console:
+
+```r
+renv::restore(prompt = FALSE)
+```
+
+You are now good to go with respect to running of the R files in this repo.
+
+The rest of this README is unchanged from the original.
 
 ## Using these files
 
