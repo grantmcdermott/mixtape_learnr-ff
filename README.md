@@ -34,9 +34,9 @@ To achieve these dual goals, I lean heavily on three core libraries:
 [`ggplot2`](https://ggplot2.tidyverse.org). 
 While these three libraries get us 90% of the way towards replicating all of the 
 code examples in the book, we occasionally have to grab a specialty library for 
-some particular section (e.g. synthetic control). I also use the 
-[`haven`](https://haven.tidyverse.org) library to pull in the proprietary (boo!) 
-Stata data format files that Scott uses in his book. 
+some particular section (e.g. synthetic control). I also use the (new)
+[`causaldata`](https://github.com/NickCH-K/causaldata) package to pull in the
+datasets that Scott uses in his book. 
 
 You can install all of the necessary libraries simply by opening up the repo's R 
 project (click on the `mixtape_learnr-ff.Rproj` file) and running the following 
