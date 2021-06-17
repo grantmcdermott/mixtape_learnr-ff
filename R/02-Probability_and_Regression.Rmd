@@ -1,0 +1,283 @@
+---
+title: "Causal Inference: <br> *The Mixtape*"
+subtitle: "<it>Probability and Regression Review</it>"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    highlight: "kate"
+runtime: shiny_prerendered
+---
+
+## Welcome
+
+This is material for the **Probability and Regression** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/)
+
+### Packages needed
+
+The first thing you need to do is install a few packages to make sure everything runs:
+
+```{r, eval = FALSE}
+# install.packages("rmarkdown")
+# install.packages("learnr")
+# install.packages("cli")
+# install.packages("causaldata")
+# install.packages("data.table")
+# install.packages("ggplot2")
+# install.packages("modelsummary")
+# install.packages("fixest")
+```
+
+### Load
+
+```{r load, warning=FALSE, message=FALSE}
+library(causaldata) 
+library(data.table)
+library(ggplot2)
+library(modelsummary)
+library(fixest)
+
+theme_set(theme_minimal()) ## nicer ggplot2 theme
+
+# 10 minute code time limit
+options(tutorial.exercise.timelimit = 600)
+```
+
+
+## OLS
+
+```{r ols_1, exercise=TRUE, echo=FALSE}
+
+cli::cli_alert_success("Generating Data")
+
+set.seed(1)
+d1 = data.table(
+  x = rnorm(1e4),
+  u = rnorm(1e4)
+  ) 
+## Add outcome
+d1[, y := 5.5*x + 12*u]
+
+## Run simple ols
+(mod1 = lm(y ~ x, d1)) ## Note: Adding parens. auto prints the mod1 object
+
+d1[, ':=' (yhat = predict(mod1), 
+           yhat2 = coef(mod1)[1] + coef(mod1)[2]*x)]
+d1[, ':=' (uhat = residuals(mod1),
+           uhat2 = y - yhat2)]
+
+cli::cli_alert_success("Plotting Line of Best Fit")
+
+ggplot(d1, aes(x = x, y = y)) + 
+    labs(title = "OLS Regression Line") +
+    geom_point(size = 0.05, color = "black", alpha = 0.5) +
+    geom_smooth(method = "lm", color = "black") +
+    annotate("text", x = -1.5, y = 30, color = "red", 
+             label = paste("Intercept = ", round(coef(mod1)[1], 4))) +
+    annotate("text", x = 1.5, y = -30, color = "blue", 
+             label = paste("Slope =", round(coef(mod1)[2], 4)))
+```
+
+#### Questions:
+
+-   What is the predicted value of $y$ when $x = 0$?
+-   How much do we estimate $y$ increases by when $x$ increases by one unit?
+-   Assume we y was the natural log of some variable, and x was the natural log of some variable.  How do we interpret the coefficient on $x$ if it is a log-log regression?
+
+```{r ols_2, exercise=TRUE, echo=FALSE}
+d2 = data.table(x = 9*rnorm(10), 
+                u = 36*rnorm(10))
+d2[, y := 3 + 2*x + u]
+
+mod2 = feols(y ~ x, d2)
+
+d2[, ':=' (yhat = predict(mod2),
+           uhat = residuals(mod2))]
+
+cli::cli_alert_success("Results from OLS")
+summary(d2)
+colSums(d2)
+```
+
+#### Questions
+
+-   What is the average of the residuals $\hat{u}$ from our regression?
+
+```{r ols_3, exercise=TRUE, echo=FALSE}
+cli::cli_alert_success("Running 1000 Simulations of OLS")
+
+ols_sim = 
+  sapply(
+    1:1e3,
+    function(x) {
+      d = data.table(x = 9*rnorm(1e4), u = 36*rnorm(1e4))
+      d[, y := 3 + 2*x + u]
+      beta = coef(lm(y ~ x, d))['x']
+      return(beta)
+      }
+    )
+
+summary(ols_sim)
+
+hist(ols_sim, border = "white", main = "OLS simulation", xlab = expression(widehat(beta)))
+abline(v=2, col="red")
+```
+
+#### Questions
+
+-   Explain the concept of unbiasedness in the context of this simulation?  
+-   On average, do we think the estimate is close to the true value of $\beta_1 = 2$?
+
+```{r ols_4, exercise=TRUE, echo=FALSE}
+data("auto", package = "causaldata")
+
+auto$length = auto$length - mean(auto$length)
+
+m1 = lm(price ~ length, auto)
+m2 = lm(price ~ length + weight + headroom + mpg, auto)
+
+msummary(list('Bivariate' = m1, 'Multivariate' = m2))
+
+auto$bvar = predict(m1)
+## "Multivariate" prediction (not really that) is a bit of a Frankenstein creation...
+auto$mvar = coef(m1)[1] + coef(m2)[2] * auto$length
+
+ggplot(auto, aes(x = length, y = price)) + 
+  geom_point() +
+  geom_line(aes(y = bvar, lty = 'Bivariate')) +
+  geom_line(aes(y = mvar, lty = 'Multvariate')) + 
+  theme(legend.position = 'bottom', legend.title = element_blank())
+```
+
+#### Questions
+
+-   What happened to the coefficient on length after controlling for weight, headroom, and mpg in the regression?
+
+## Clustering Standard Errors
+
+### Cluster robust standard errors
+
+People will try to scare you by challenging how you constructed your standard errors. Heteroskedastic errors, though, aren't the only thing you should be worried about when it comes to inference. Some phenomena do not affect observations individually, but they do affect groups of observations that involve individuals. And then they affect those individuals within the group in a common way. Say you want to estimate the effect of class size on student achievement, but you know that there exist unobservable things (like the teacher) that affect all the students equally. If we can commit to independence of these unobservables across classes, but individual student unobservables are correlated within a class, then we have a situation in which we need to cluster the standard errors. Before we dive into an example, I'd like to start with a simulation to illustrate the problem.
+
+**GM: Unlike Scott's original notes, I'm going to simulate nonclustered (i.e. IID) and clustered data at the same time. This is more computationally efficient and will allow us to compare different data generating processes (DGPs) and estimated standard errors more easily.**
+
+As a baseline for this simulation, let's begin by simulating nonclustered data and analyze least squares estimates of that nonclustered (i.e. IID) data. This will help firm up our understanding of the problems that occur with least squares when data is clustered.
+
+First, I will generate some data and create a function for simulating our Monte Carlo simulation. **GM added: The generated data includes both IID and clustered observations. The true value of $\beta_1$ for both cases is set to 0, but the clustered nature of the latter means that observations are no longer independent draws of each other. As we shall see, this has implications for our model inference.**
+
+```{r gen_clust_data}
+set.seed(1234)
+
+n_sims = 1e3 ## no. of simulations
+n = 1e3      ## obs in each sim
+n_cl = 50    ## no. of clusters
+b0 = 0.4     ## intercept
+b1 = 0       ## slope coefficient
+rho = 0.5    ## error/cluster coefficient
+
+d = data.table(sim = rep(1:n_sims, each = n),
+               cl_id = rep(1:n_cl, each = n/n_cl))
+setorder(d, sim, cl_id) ## optional
+d[, 
+  ':=' (x = rnorm(length(sim)),
+        e = rnorm(length(sim), sd = sqrt(1 - rho)))
+  ]
+d[, 
+  ':=' (x_cl = x + rnorm(n/n_cl),
+        e_cl = e + rnorm(n/n_cl, sd = sqrt(rho))),
+  by = .(sim, cl_id)]
+d[,
+    ':=' (y    = b0 + b1*x    + e,
+          y_cl = b0 + b1*x_cl + e_cl)
+  ]
+
+## Simulation function. Note that this will estimation four models, combining
+## clustered and non-clustered data with clustered and IID standard errors.
+sim_func =
+  function(data) {
+    
+    mod_iid = feols(y ~ x, data)
+    mod_cl  = feols(y_cl ~ x_cl, data)
+    
+    ret = 
+      rbindlist(lapply(
+        list(mod_iid, mod_cl),
+        function(mod) {
+          rbindlist(lapply(
+            list(NULL, 'cl_id'),
+            function(cvar) {
+              m = summary(mod, cluster = cvar)
+              s = cbind(est = coef(m)[2], confint(m)[2,])
+              names(s) = c('est', 'ci95_low', 'ci95_high')
+              s$dgp = paste('DGP:', fifelse(as.character(m$fml[2])=='y_cl', 'Clustered', 'IID'))
+              s$se = paste('SE:', fifelse(!is.null(cvar), 'Clustered', 'IID'))
+              return(s)
+              }
+            ))
+          }
+        ))
+    return(ret)
+  }
+```
+ 
+Now we run the simulation. This will take a few seconds.
+
+```{r run_sims}
+
+cli::cli_alert_success("Running Simulation")
+sims = 
+  rbindlist(lapply(
+    1:n_sims, 
+    function(i) {
+      ret = sim_func(d[sim==i])
+      ret$sim = i
+      return(ret)
+      }
+    ))
+
+## Order from largest to smallest beta estimate (within each dgp-se combo). 
+setorder(sims, dgp, se, est)
+sims[, i := rowid(dgp, se)]
+
+## Did we catch the true parameter value?
+sims[, param_caught := ci95_low <= b1 & ci95_high >= b1]
+
+## Take a quick look at the results of our simulation
+sims
+```
+
+We can also compare
+
+```{r eval_sims, exercise = TRUE, eval = FALSE}
+## Minor tweak for plot: Make sure IID cases come first
+sims[, dgp := factor(dgp, levels = paste('DGP:', c('IID', 'Clustered')))]
+sims[, se := factor(se, levels = paste('SE:', c('IID', 'Clustered')))]
+
+## Plot our four different DGP-SE combinations
+ggplot(sims, aes(x = i, y = est, ymin = ci95_low, ymax = ci95_high)) +
+  geom_line(col = 'gray50') +
+  geom_ribbon(alpha = 0.3) +
+  geom_ribbon(data = sims[ci95_low > b1], fill = 'red', alpha = 0.3) + 
+  geom_ribbon(data = sims[ci95_high < b1], fill = 'red', alpha = 0.3) +
+  geom_hline(yintercept = b1, lty = 2) +
+  labs(
+    y = 'Parameter estimate', x = 'Simulation',
+    title = 'Least squares estimate of IID and clustered data',
+    subtitle = '95% CI of the slope coefficient', 
+    caption = 'Note: Vertical dashed line denotes truth'
+    ) +
+  facet_wrap(~dgp+se) +
+  coord_flip()
+
+# Summarising in table form
+sims[, .N, by = .(dgp, se, param_caught)][, prop := N/sum(N), by = .(dgp, se)][]
+## Pivoted version
+# sims[, .N, by = .(dgp, se, param_caught)][, prop := N/sum(N), by = .(dgp, se)] |>
+#   dcast(dgp + se ~ paste0("param_caught_", param_caught))
+```
+
+#### Questions:
+
+-   What point does the standard (IID) least squares estimate appear to be centered on in the top-left panel of the figure?
+-   Setting the significance level at 5%, we should incorrectly reject the null that $\beta_1=0$ about 5% of the time in our simulations. bout what percent of the time does the 95% confidence intervals contain the true value of $\beta_1 = 0$?
+-   When the errors are clustered (right-hand panels), does the distribution of $\hat{\beta}_1$ estimates get wider or narrower?
+-   When the errors are clustered, do we incorrectly reject the null more or less frequently?
