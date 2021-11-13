@@ -14,7 +14,20 @@ This is material for the **Probability and Regression** chapter in Scott Cunning
 
 ### Packages needed
 
-The first thing you need to do is install a few packages to make sure everything runs:
+The first thing you need to do is install a few R packages to make sure everything runs.
+If you cloned this repo directly from GitHub, all you need to do is run:
+
+```{r, eval = FALSE}
+renv::restore(prompt = FALSE)
+```
+
+The above line of code (which you may have run already) will ensure that all of
+required packages for the **The Mixtape (Fast Forward ed.)** are downloaded into 
+a sandboxed project environment. I _strongly_ recommend you follow this method
+if you are completing these exercises on your home/work computer.
+
+An alternative approach is to manually install the individual packages needed 
+for this tutorial:
 
 ```{r, eval = FALSE}
 # install.packages("rmarkdown")
@@ -30,16 +43,17 @@ The first thing you need to do is install a few packages to make sure everything
 ### Load
 
 ```{r load, warning=FALSE, message=FALSE}
+## Libraries
 library(causaldata) 
 library(data.table)
 library(ggplot2)
 library(modelsummary)
 library(fixest)
 
-theme_set(theme_minimal()) ## nicer ggplot2 theme
-
-# 10 minute code time limit
-options(tutorial.exercise.timelimit = 600)
+## Some options
+theme_set(theme_minimal()) # Cleaner ggplot2 theme
+options(datatable.print.class=TRUE, datatable.print.keys=TRUE) # data.table print options
+options(tutorial.exercise.timelimit = 600) # 10 minute code time limit
 ```
 
 
@@ -167,28 +181,28 @@ First, I will generate some data and create a function for simulating our Monte 
 ```{r gen_clust_data}
 set.seed(1234)
 
+## Paramters
 n_sims = 1e3 ## no. of simulations
-n = 1e3      ## obs in each sim
-n_cl = 50    ## no. of clusters
-b0 = 0.4     ## intercept
-b1 = 0       ## slope coefficient
-rho = 0.5    ## error/cluster coefficient
+n      = 1e3 ## obs in each sim
+n_cl   = 50  ## no. of clusters
+b0     = 0.4 ## intercept
+b1     = 0   ## slope coefficient
+rho    = 0.5 ## error/cluster coefficient
 
+## Skeleton data frame with number of simulations and IDs
 d = data.table(sim = rep(1:n_sims, each = n),
                cl_id = rep(1:n_cl, each = n/n_cl))
 setorder(d, sim, cl_id) ## optional
-d[, 
-  ':=' (x = rnorm(length(sim)),
-        e = rnorm(length(sim), sd = sqrt(1 - rho)))
-  ]
-d[, 
-  ':=' (x_cl = x + rnorm(n/n_cl),
-        e_cl = e + rnorm(n/n_cl, sd = sqrt(rho))),
-  by = .(sim, cl_id)]
-d[,
-    ':=' (y    = b0 + b1*x    + e,
-          y_cl = b0 + b1*x_cl + e_cl)
-  ]
+## Generate IID x var and errors
+d[, ':=' (x = rnorm(length(sim)),
+					e = rnorm(length(sim), sd = sqrt(1 - rho)))]
+## Generate clustered x var and errors
+d[, ':=' (x_cl = x + rnorm(n/n_cl),
+					e_cl = e + rnorm(n/n_cl, sd = sqrt(rho))),
+	by = .(sim, cl_id)]
+## Generate both IID and clustered outcome vars
+d[, ':=' (y    = b0 + b1*x    + e,
+					y_cl = b0 + b1*x_cl + e_cl)]
 
 ## Simulation function. Note that this will estimation four models, combining
 ## clustered and non-clustered data with clustered and IID standard errors.
