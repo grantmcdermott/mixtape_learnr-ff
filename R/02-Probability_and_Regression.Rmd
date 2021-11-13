@@ -23,8 +23,8 @@ renv::restore(prompt = FALSE)
 ```
 
 The above line of code (which you may have run already) will ensure that all of
-required packages for the **The Mixtape (Fast Forward ed.)** are downloaded into 
-a sandboxed project environment. I _strongly_ recommend you follow this method
+required packages for the *The Mixtape (Fast Forward ed.)* are downloaded into 
+a sandboxed project environment. I strongly recommend you follow this method
 if you are completing these exercises on your home/work computer.
 
 An alternative approach is to manually install the individual packages needed 
