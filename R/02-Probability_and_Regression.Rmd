@@ -10,8 +10,8 @@ runtime: shiny_prerendered
 
 ## Welcome
 
-This is material for the **Probability and Regression** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/) **GM: This is 
-the "fast forward" version, adapted by Grant McDermott.** 
+This is material for the **Probability and Regression** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/) 
+**GM: This is the "fast forward" version, adapted by Grant McDermott.** 
 
 ### Packages needed
 
