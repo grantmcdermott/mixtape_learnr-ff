@@ -10,10 +10,9 @@ are both outstanding pedagogical tools. So why the hard fork?
 
 The short reason is that, upon reading through the material, I realised I would
 write parts of the R code quite differently. (To be clear: There's no right or 
-wrong way! Software pluralism FTW.) So, this forked version is simply to be 
+wrong way. Software pluralism FTW.) So, this forked version is simply to be 
 consistent with the way I'd probably teach an econometrics course using Scott's
-super book. Keeping with the mixtape theme, this "fast forward" edition tries to
-be:
+book. Keeping with the mixtape theme, this "fast forward" edition tries to be:
 
 - **Lean:** My version of the code tries to be very concise (whilst hopefully 
 maintaining readability). It also requires that users install and interact with 
