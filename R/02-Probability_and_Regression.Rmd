@@ -45,16 +45,20 @@ for this tutorial:
 
 ```{r load, warning=FALSE, message=FALSE}
 ## Libraries
-library(causaldata) 
-library(data.table)
-library(ggplot2)
-library(modelsummary)
-library(fixest)
+library(learnr)       ## Turn this Rmd file into an interactive tutorial
+library(causaldata)   ## Bundles The Mixtape datasets
+library(data.table)   ## High-performance data wrangling
+library(fixest)       ## High-performance (fixed-effect +) regressions
+library(ggplot2)      ## Nice plots
+library(modelsummary) ## Nice regression tables
 
 ## Some options
-theme_set(theme_minimal()) # Cleaner ggplot2 theme
-options(datatable.print.class=TRUE, datatable.print.keys=TRUE) # data.table print options
-options(tutorial.exercise.timelimit = 600) # 10 minute code time limit
+theme_set(theme_minimal())          ## ggplot2 theme
+options(
+	datatable.print.class = TRUE,     ## data.table print options
+	datatable.print.keys = TRUE,      ## ditto
+	tutorial.exercise.timelimit = 600 ## 10 minute code time limit
+	)
 ```
 
 
