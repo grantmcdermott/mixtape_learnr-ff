@@ -1,0 +1,152 @@
+---
+title: "Causal Inference: <br> *The Mixtape*"
+subtitle: "<it>Panel Data</it>"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    highlight: "kate"
+runtime: shiny_prerendered
+---
+
+## Welcome
+
+This is material for the **Panel Data** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/)
+**GM: This is the "fast forward" version, adapted by Grant McDermott.** 
+
+### Packages needed
+
+The first thing you need to do is install a few R packages to make sure everything runs.
+If you cloned this repo directly from GitHub, all you need to do is run:
+
+```{r, eval = FALSE}
+renv::restore(prompt = FALSE)
+```
+
+The above line of code (which you may have run already) will ensure that all of
+required packages for the *The Mixtape (Fast Forward ed.)* are downloaded into 
+a sandboxed project environment. I strongly recommend you follow this method
+if you are completing these exercises on your home/work computer.
+
+An alternative approach is to manually install the individual packages needed 
+for this tutorial:
+
+```{r, eval = FALSE}
+# install.packages("rmarkdown")
+# install.packages("learnr")
+# install.packages("cli")
+# install.packages("causaldata")
+# install.packages("haven")
+# install.packages("data.table")
+# install.packages("modelsummary")
+# install.packages("fixest")
+```
+
+### Load
+
+```{r load, warning=FALSE, message=FALSE}
+## Libraries
+library(learnr)       ## Turn this Rmd file into an interactive tutorial
+library(causaldata)   ## Bundles The Mixtape datasets
+library(haven)				## Stata data types and classes
+library(data.table)   ## High-performance data wrangling
+library(fixest)       ## High-performance (fixed-effect +) regressions
+library(modelsummary) ## Nice regression tables
+
+## Some options
+options(
+	datatable.print.class = TRUE,     ## data.table print options
+	datatable.print.keys = TRUE,      ## ditto
+	tutorial.exercise.timelimit = 600 ## 10 minute code time limit
+	)
+```
+
+
+
+## Survey of Adult Service Providers
+
+**GM: We'll use `fixest::feols()` to run all of the below regressions, although we could obviously use `lm()` to run the pooled OLS and demeaned versions too.**
+
+```{r sasp, exercise=TRUE, echo=FALSE}
+cli::cli_h1("Data load and prep")
+## Load the dataset
+data("adult_services", package = "causaldata")
+## Rename and set as a data.table 
+sasp = as.data.table(adult_services)
+## Remove all NAs and drop variables that we won't need for the regressions
+sasp = na.omit(sasp[, !c("session", "white", "nevermarried", "widowed")])
+## Balance the panel; drop individuals that we don't observe for all sessions
+sasp = sasp[, n := .N, by = id][n==max(n)][, n:= NULL]
+
+#-- Regression globals
+cli::cli_h1("Regression globals")
+## Define the model RHS as a global macro, so we don't have to retype each time
+## Explanatory vars incl. everything except lnw (dep. var) and id (fixed effect)
+setFixest_fml(..rhs = setdiff(names(sasp), c("lnw", "id")))
+
+#-- POLS
+cli::cli_h1("Pooled OLS") 
+ols = feols(lnw ~ ..rhs, data = sasp, vcov = 'HC1')
+
+#-- FE
+cli::cli_h1("Fixed Effects") 
+## Add "id" fixed effect
+fe = feols(lnw ~ ..rhs | id, data = sasp, vcov = 'HC1')
+
+#-- Demean OLS
+cli::cli_h1("Demeaned OLS") 
+## Create demeaned version of the data (each variable demeaned within provider ID)
+sasp_demean = sasp[, lapply(.SD, \(x) x - mean(x)), by = id]
+## Run our pooled OLS regression on this demeaned dataset.
+ols_demean = feols(lnw ~ ..rhs, data = sasp_demean, vcov = ~id)
+```
+
+**GM: Display the regression table that we see in the book.**
+
+```{r regtab, warning=FALSE}
+#-- Regression table
+cli::cli_h1("Regression table") 
+
+## Dictionary for nice coef names
+dict = c("unsafe"          = "Unprotected sex with client of any kind",
+				 "llength"         = "Ln(Length)",
+				 "reg"             = "Client was a Regular",
+				 "age_cl"          = "Age of Client",
+				 "asq_cl"          = "Age of Client Squared",
+				 "appearance_cl"   = "Client Attractiveness (Scale of 1 to 10)",
+				 "provider_second" = "Second Provider Involved",
+				 "asian_cl"        = "Asian Client",
+				 "black_cl"        = "Black Client",
+				 "hispanic_cl"     = "Hispanic Client",
+				 "othrace_cl"      = "Other Ethnicity Client",
+				 "hot"             = "Met Client in Hotel",
+				 "massage_cl"      = "Gave Client a Massage",
+				 "age"             = "Age of provider",
+				 "asq"             = "Age of provider squared",
+				 "bmi"             = "Body Mass Index",
+				 "asian"           = "Asian",
+				 "black"           = "Black",
+				 "hispanic"        = "Hispanic",
+				 "other"           = "Other",
+				 "schooling"       = "Imputed Years of Schooling",
+				 "cohab"           = "Cohabitating (living with a partner) but unmarried",
+				 "married"         = "Currently married and living with your spouse",
+				 "divorced"        = "Divorced and not remarried",
+				 "separated"       = "Married but not currently living with your spouse")
+		
+## Regression table
+mods = list("POLS" = ols, "FE" = fe, "Demeaned OLS" = ols_demean)
+# etable(mods, dict = dict) ## Native fixest regression table function
+msummary(
+	mods,
+	coef_map = dict,
+	stars = TRUE,
+	gof_omit = "R2|IC|Log|F"
+	)
+```
+
+#### QUESTIONS
+- Interpret the effect of natural log of session length on the natural log of hourly wage.  Describe the economic theory that might explain this relationship?  (HINT: Consider the role that supplier fixed versus variable costs may have on the hourly wage.)
+- Becker described discrimination in terms of ``taste based``.  This meant that social interactions with people of the other race were factors into marginal cost.  Given that these persist, what does this imply about the effect that competition is having on discrimination?
+- Hamermesh and Biddle suggest that beauty is valued on the market.  Describe some reasons why there is no effect on client beauty once we use the within estimators?
+- What other interesting results did you find in this analysis?  Which ones surprised you and which ones were intuitive and why?
+
