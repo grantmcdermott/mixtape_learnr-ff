@@ -1,0 +1,124 @@
+---
+title: "Causal Inference: <br> *The Mixtape*"
+subtitle: "<it>Synthetic Control</it>"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    highlight: "kate"
+runtime: shiny_prerendered
+---
+
+## Welcome
+
+This is material for the **Synthetic Control** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/)
+**GM: This is the "fast forward" version, adapted by Grant McDermott.** 
+
+### Packages needed
+
+The first thing you need to do is install a few R packages to make sure everything runs.
+If you cloned this repo directly from GitHub, all you need to do is run:
+
+```{r, eval = FALSE}
+renv::restore(prompt = FALSE)
+```
+
+The above line of code (which you may have run already) will ensure that all of
+required packages for the *The Mixtape (Fast Forward ed.)* are downloaded into 
+a sandboxed project environment. I strongly recommend you follow this method
+if you are completing these exercises on your home/work computer.
+
+An alternative approach is to manually install the individual packages needed 
+for this tutorial:
+
+```{r, eval = FALSE}
+# install.packages("rmarkdown")
+# install.packages("learnr")
+# install.packages("cli")
+# install.packages("causaldata")
+# install.packages("tidysynth")
+```
+
+### Load
+
+```{r load, warning=FALSE, message=FALSE}
+## Libraries
+library(learnr)       ## Turn this Rmd file into an interactive tutorial
+library(causaldata)   ## Bundles The Mixtape datasets
+library(tidysynth)		## Synthetic control
+
+## Some options
+options(tutorial.exercise.timelimit = 600) ## 10 minute code time limit
+```
+
+
+## Prison Construction and Black Male Incarceration
+
+```{r texas, exercise=TRUE, echo=FALSE}
+
+#-- Data
+cli::cli_h1("Data")
+data("texas", package = "causaldata")
+
+#-- Synthetic control
+cli::cli_h1("Run synthetic control")
+texas_synth =
+	texas %>%
+	## Initialize the synthetic control object
+	synthetic_control(
+		outcome = bmprison,      ## outcome
+		unit = state,            ## unit index in the panel data
+		time = year,             ## time index in the panel data
+		i_unit = 'Texas',        ## unit where the intervention occurred
+		i_time = 1994,           ## time period when the intervention occurred
+		generate_placebos = TRUE ## generate placebo synthetic controls (for inference)
+		) %>%
+	## Generate the aggregate predictors used to fit the weights...
+	generate_predictor(
+		time_window = 1988,	
+		bmprison = mean(bmprison, na.rm=TRUE)
+		) %>%
+	## 1990 vars 
+	generate_predictor(
+		time_window = 1990,
+		alcohol = mean(alcohol, na.rm=TRUE),
+		perc1519 = mean(perc1519, na.rm=TRUE)) %>%
+	## 1990 - 1991 vars
+	generate_predictor(
+		time_window = 1990:1991,
+		aidscapita = mean(aidscapita, na.rm=TRUE)
+		) %>%
+	## 1990:1992 vars
+	generate_predictor(
+		time_window = 1990:1992,
+		black = mean(black, na.rm=TRUE)
+		) %>%
+	## Generate the fitted weights for the synthetic control
+	generate_weights(
+		optimization_window = 1985:1993 ## years to use in the optimization task
+		) %>%
+	## Generate the synthetic control
+	generate_control()
+
+
+#-- Plots
+cli::cli_h1("Trend Plot")
+plot_trends(texas_synth)
+
+cli::cli_h1("Gap Plot")
+plot_differences(texas_synth)
+
+cli::cli_h1("Donor weights")
+plot_weights(texas_synth)
+
+cli::cli_h1("Placebos")
+plot_placebos(texas_synth)
+```
+
+#### Questions
+- In your own words, what do you think the identifying assumptions are for synthetic control to be consistent? 
+- What role, if any, does parallel trends play in synthetic control?
+- Who is the unit with the largest ratio of post to pre RMSPE?  
+- Compare the unit with the largest post to pre RMSPE estimated effect to the Texas effect.  How do the weights compare?  How do the size of the effects compare?  How do the ``signs`` of the effects compare?
+- Can you improve on my fit by experimenting with different combinations? Do so and report your analysis.
+- Report results from a variety of different specifications.  How robust does the prison effect appear to be?
+
