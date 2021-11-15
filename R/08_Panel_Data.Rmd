@@ -61,7 +61,6 @@ options(
 ```
 
 
-
 ## Survey of Adult Service Providers
 
 **GM: We'll use `fixest::feols()` to run all of the below regressions, although we could obviously use `lm()` to run the pooled OLS and demeaned versions too.**
