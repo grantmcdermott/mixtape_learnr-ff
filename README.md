@@ -10,9 +10,10 @@ are both outstanding pedagogical tools. So why the hard fork?
 
 The short reason is that, upon reading through the material, I realised I would
 write parts of the R code quite differently. (To be clear: There's no right or 
-wrong way. Software pluralism FTW.) So, this forked version is simply to be 
+wrong way.) So, this forked version is simply to be 
 consistent with the way I'd probably teach an econometrics course using Scott's
-book. Keeping with the mixtape theme, this "fast forward" edition tries to be:
+book. Keeping with the mixtape theme, this "fast forward" edition tries to be
+_lean_ and _mean_:
 
 - **Lean:** My version of the code tries to be very concise (whilst hopefully 
 maintaining readability). It also requires that users install and interact with 
@@ -27,13 +28,13 @@ quickly. More importantly, the performance benefits should carry over to cases
 where users adapt the code to their own, more computationally intensive 
 research problems.
 
-To achieve these dual goals, I lean heavily on three core libraries: 
+To achieve these dual goals, I lean a few core libraries like
 [`data.table`](https://rdatatable.gitlab.io/data.table), 
 [`fixest`](https://lrberge.github.io/fixest), and 
 [`ggplot2`](https://ggplot2.tidyverse.org). 
 While these three libraries get us 90% of the way towards replicating all of the 
 code examples in the book, we occasionally have to grab a specialty library for 
-some particular section (e.g. synthetic control). I also use the (new)
+some particular section (e.g. synthetic control). I also use the
 [`causaldata`](https://github.com/NickCH-K/causaldata) package to pull in the
 datasets that Scott uses in his book. 
 
