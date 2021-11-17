@@ -1,0 +1,260 @@
+---
+title: "Causal Inference: <br> *The Mixtape*"
+subtitle: "<it>Difference-in-Differences</it>"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    highlight: "kate"
+runtime: shiny_prerendered
+---
+
+## Welcome
+
+This is material for the **Difference-in-Differences** chapter in Scott Cunningham's book, [Causal Inference: The Mixtape.](https://mixtape.scunning.com/)
+**GM: This is the "fast forward" version, adapted by Grant McDermott.** 
+
+### Packages needed
+
+The first thing you need to do is install a few R packages to make sure everything runs.
+If you cloned this repo directly from GitHub, all you need to do is run:
+
+```{r, eval = FALSE}
+renv::restore(prompt = FALSE)
+```
+
+The above line of code (which you may have run already) will ensure that all of
+required packages for the *The Mixtape (Fast Forward ed.)* are downloaded into 
+a sandboxed project environment. I strongly recommend you follow this method
+if you are completing these exercises on your home/work computer.
+
+An alternative approach is to manually install the individual packages needed 
+for this tutorial:
+
+```{r, eval = FALSE}
+# install.packages("rmarkdown")
+# install.packages("learnr")
+# install.packages("cli")
+# install.packages("causaldata")
+# install.packages("haven")
+# install.packages("data.table")
+# install.packages("modelsummary")
+# install.packages("fixest")
+# install.packages("remotes")
+# remotes::install_github("evanjflack/bacondecomp") ## Using the dev version
+```
+
+### Load
+
+```{r load, warning=FALSE, message=FALSE}
+## Libraries
+library(learnr)       ## Turn this Rmd file into an interactive tutorial
+library(causaldata)   ## Bundles The Mixtape datasets
+library(haven)				## Stata data types and classes
+library(data.table)   ## High-performance data wrangling
+library(fixest)       ## High-performance (fixed-effect +) regressions
+library(bacondecomp)  ## Goodman-Bacon decomposition
+
+## Some options
+par(family = 'HersheySans')         ## Nicer base plot font
+options(
+	datatable.print.class = TRUE,     ## data.table print options
+	datatable.print.keys = TRUE,      ## ditto
+	tutorial.exercise.timelimit = 600 ## 10 minute code time limit
+	)
+```
+
+
+## Cunningham and Cornwell (2013)
+
+```{r abortion_dd, exercise=TRUE, echo=FALSE}
+cli::cli_h1("CC13 data load and prep")
+
+data("abortion", package = "causaldata")
+setDT(abortion)
+
+#-- DD estimate of 15-19 year olds in repeal states vs Roe states
+cli::cli_h1("CC13 DD estimates")
+
+## Regression macros (to save on re-typing control variables)
+setFixest_fml(..ctrl = ~ acc + ir + pi + alcohol + crack + poverty + income + ur)
+
+dd = feols(lnr ~ i(year, repeal, ref = 1985) + ..ctrl | year + fip,
+					 data = abortion[bf15==1], 
+					 weights = ~totpop,
+					 vcov = ~fip)
+
+iplot(dd, drop = '1985', 
+			xlab = "Year", ylab = "Repeal x year estimated coefficient",
+			main = "Estimated effect of abortion legalization on gonorrhea (DD)")
+rect(1985, -100, 1992, 100, col=adjustcolor('dodgerblue', alpha.f=0.3), border=NA)
+```
+
+#### Questions
+- Describe in your own words the testable predictions from the roll out of repeal versus Roe in the population?  In other words, describe the behavior of the DD coefficients under this regression.  
+- Do we find evidence consistent with this in our DD analysis?  List all the evidence for and against the hypothesis in this analysis. 
+- Does it appear that there was an effect in the period where Roe has not fully caught up?
+
+
+
+```{r abortion_ddd, exercise=TRUE, echo=FALSE}
+#-- DDD estimate of 15-19 yo (vs 25-29 yo) in repeal states vs Roe states
+cli::cli_h1("CC13 DDD estimates")
+
+abortion[, yr := younger==1 & repeal==1]
+
+ddd = feols(lnr ~ i(year, yr, ref=1985) + i(year, repeal) + i(year, younger) + ..ctrl |
+							fip[year] + year + repeal^younger,
+						data = abortion[(wht==0 & male==0) & (age==15 | age==25)], 
+						weights = ~totpop, vcov = ~fip)
+
+iplot(ddd, drop = '1985', 
+			xlab = "Year", ylab = "Repeal x 15-19yo x year estimated coefficient",
+			main = "Estimated effect of abortion legalization on gonorrhea (DDD)")
+rect(1985, -100, 1992, 100, col=adjustcolor('dodgerblue', alpha.f=0.3), border=NA)
+mtext("Note: Black female 15-19 year-olds vs. Black female 25-29 year-olds", font=3)
+```
+
+
+#### Questions
+- Why did we implement a triple difference?  What problems does this solve and to what degree do you feel it is a necessary check?
+- Describe the evidence for and against the abortion selection hypothesis when using triple difference?  How is it consistent with our DD and how is it not?
+
+
+```{r abortion_dd2, exercise=TRUE, echo=FALSE}
+
+#-- Repeat DD estimate but his time for 20-24 year-olds
+cli::cli_h1("CC13 DD update (20-24 yo)")
+
+## Aside: We can just re-use the formula from our original dd model
+dd2 = feols(formula(dd),
+					 data = abortion[race==2 & sex==2 & age==20], 
+					 weights = ~totpop,
+					 vcov = ~fip)
+
+iplot(dd2, drop = '1985', 
+			xlab = "Year", ylab = "Repeal x year estimated coefficient",
+			main = "Estimated effect of abortion legalization on gonorrhea (DD)")
+rect(1991, -100, 1997, 100, col=adjustcolor('dodgerblue', alpha.f=0.3), border=NA)
+
+```
+
+```{r abortion_ddd2, exercise=TRUE, echo=FALSE}
+
+#-- Repeat DDD estimate but his time for 20-24 year-olds
+cli::cli_h1("CC13 DDD update (20-24 yo)")
+
+abortion[, younger2 := age==20][, yr2 := younger2==1 & repeal==1]
+
+ddd2 = feols(lnr ~ i(year, yr2, ref=1985) + i(year, repeal) + i(year, younger2) + ..ctrl |
+							fip[year] + year + repeal^younger2,
+						data = abortion[(wht==0 & male==0) & (age==20 | age==25)], 
+						weights = ~totpop, vcov = ~fip)
+
+iplot(ddd2, drop = '1985', 
+			xlab = "Year", ylab = "Repeal x 20-24yo x year estimated coefficient",
+			main = "Estimated effect of abortion legalization on gonorrhea (DDD)")
+rect(1991, -100, 1997, 100, col=adjustcolor('dodgerblue', alpha.f=0.3), border=NA)
+mtext("Note: Black female 20-24 year-olds vs. Black female 25-29 year-olds", font=3)
+```
+
+
+#### Questions
+- Why did we suggest that conducting this additional analysis not conducted in the original study?
+- How convinced are you now of the abortion selection hypothesis?  Why/why not?
+- Could you have concluded this had you not exploited all of the testable predictions of the original table showing roll out across cohort and time?  
+- How important was our ``model`` to forming testable predictions and falsifications? 
+
+## Cheng and Hoekstra (2013)
+
+```{r castle_1, exercise=TRUE, echo=FALSE}
+cli::cli_h1("CH13 data load and prep")
+
+castle = read_dta("https://raw.github.com/scunning1975/mixtape/master/castle.dta")
+setDT(castle)
+
+## GM: There are _loads_ of unused variables in this dataset, including a great
+## many that are relics of Stata design matrix expansion (lots of dummy columns).
+## I'm going to drop these and use the much more concise formula syntax that
+## should be familiar to R users (i.e. factor expansion and interactions).
+drop_cols = grep("^r20|^trend|^lead|^lag|^_Iyear", names(castle), value = TRUE)
+castle[, (drop_cols) := NULL]; rm(drop_cols)
+castle[, region := fcase(northeast==1, 'northeast',
+												 midwest==1, 'midwest',
+												 south==1, 'south',
+												 west==1, 'west')]
+
+## Regression macros
+setFixest_fml(
+	..xvar = ~ blackm_15_24 + whitem_15_24 + blackm_25_44 + whitem_25_44 +   ## demographics
+		         l_exp_subsidy + l_exp_pubwelfare + l_police +                 ## spending
+		         unemployrt + poverty + l_income + l_prisoner + l_lagprisoner  ## other vars
+	)
+
+
+#-- DD estimate of castle doctrine ("stand your ground") expansion on homicides
+cli::cli_h1("CH13 DD regression")
+dd_cas = feols(l_homicide ~ post + ..xvar | sid[year] + region^year, 
+							 data = castle, vcov = ~sid, weights = ~popwt)
+summary(dd_cas)
+```
+
+#### QUESTIONS
+
+- What effect does this analysis say reforming castle doctrine laws has on homicides?
+- What are the key parts of these legislative reforms that you think may be causing this result?
+- Explain what SUTVA requires in order for these estimates to be causal?
+- Assume there are spillovers to neighboring states created by castle doctrine reforms.  Does that imply that Cheng and Hoekstra's result is too large or too small?  Why/why not?
+
+```{r castle_2, exercise=TRUE, echo=FALSE}
+#-- ES estimate of castle doctrine ("stand your ground") expansion on homicides
+cli::cli_h1("CH13 event study")
+
+## GM: For the event-study we're going to recast things i.t.o of relative time
+## until treatment. Note that the never treated group will get a fake (far-off)
+## date.
+castle[, ':=' (time_til = year - treatment_date, treated = max(post)), by = sid
+			 ][is.na(time_til), time_til := 1000]
+
+## GM: Normally I'd set the treatment reference period at -1, but I'm just going
+## follow Scott's lead and use 0 (i.e. the exact treatment period). We also
+## include 1000 as a (fake) reference to exclude the never-treated states.
+es_cas = feols(l_homicide ~ i(time_til, treated, ref = c(0, 1000)) | 
+							 	region^year + sid, 
+							 data = castle, weights = ~popwt, vcov = ~sid)
+
+iplot(es_cas, ref.line = 0,
+			main = "Log Murder Rate", 
+			xlab = "Years until castle doctrine expansion")
+```
+
+#### QUESTIONS
+- Put into your own words why we estimated the pre-treatment leads?
+- Put into your own words what we expected to find?
+- How convinced are you by this analysis that parallel trends was likely to hold in Cheng and Hoekstra's data? 
+
+```{r castle_3, exercise=TRUE, echo=FALSE}
+iplot(es_cas, ref.line = 0,
+			pt.join = TRUE, pt.pch = NA, pt.join.par = list(lwd = 2, col = "dodgerblue"),
+			ci.lwd = 0, ci.fill = TRUE, ci.fill.par = list(col = "dodgerblue"),
+			grid = FALSE,
+			main = "Log Murder Rate", 
+			xlab = "Years until castle doctrine expansion")
+mtext("Same plot as last time, just different aesthetics...", font = 3)
+```
+
+**GM: `iplot()` is _extremely_ customizable. But you might also want to check out [`ggiplot`](https://github.com/grantmcdermott/ggiplot) for a ggplot2 equivalent.**
+
+### Bonus: Goodman-Bacon decomposition
+
+```{r castle_5, exercise=TRUE, echo=FALSE}
+cli::cli_h1("Goodman-Bacon decomposition")
+
+bacon_cas = bacon(l_homicide ~ post,
+									id_var = "state", time_var = "year",
+									data = castle[, .(l_homicide, post, state, year)])
+plot(estimate ~ weight, data = bacon_cas, 
+		 pch=c(0,1,2)[as.factor(type)], col=c(4,6,8)[as.factor(type)],
+		 main = "Goodman-Bacon decomposition", xlab = "Weight", ylab= "2x2 DD Estimate")
+abline(a = sum(bacon_cas$estimate*bacon_cas$weight), b = 0, lty = 2)
+legend("bottomright", pch=0:2, col=c(4,6,8), legend=sort(unique(bacon_cas$type)))
+```
