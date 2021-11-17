@@ -28,7 +28,7 @@ quickly. More importantly, the performance benefits should carry over to cases
 where users adapt the code to their own, more computationally intensive 
 research problems.
 
-To achieve these dual goals, I lean a few core libraries like
+To achieve these dual goals, I lean on a few core libraries like
 [`data.table`](https://rdatatable.gitlab.io/data.table), 
 [`fixest`](https://lrberge.github.io/fixest), and 
 [`ggplot2`](https://ggplot2.tidyverse.org). 
