@@ -54,10 +54,10 @@ library(modelsummary) ## Nice regression tables
 
 ## Some options
 options(
-	datatable.print.class = TRUE,     ## data.table print options
-	datatable.print.keys = TRUE,      ## ditto
-	tutorial.exercise.timelimit = 600 ## 10 minute code time limit
-	)
+  datatable.print.class = TRUE,     ## data.table print options
+  datatable.print.keys = TRUE,      ## ditto
+  tutorial.exercise.timelimit = 600 ## 10 minute code time limit
+  )
 ```
 
 
@@ -107,40 +107,40 @@ cli::cli_h1("Regression table")
 
 ## Dictionary for nice coef names
 dict = c("unsafe"          = "Unprotected sex with client of any kind",
-				 "llength"         = "Ln(Length)",
-				 "reg"             = "Client was a Regular",
-				 "age_cl"          = "Age of Client",
-				 "asq_cl"          = "Age of Client Squared",
-				 "appearance_cl"   = "Client Attractiveness (Scale of 1 to 10)",
-				 "provider_second" = "Second Provider Involved",
-				 "asian_cl"        = "Asian Client",
-				 "black_cl"        = "Black Client",
-				 "hispanic_cl"     = "Hispanic Client",
-				 "othrace_cl"      = "Other Ethnicity Client",
-				 "hot"             = "Met Client in Hotel",
-				 "massage_cl"      = "Gave Client a Massage",
-				 "age"             = "Age of provider",
-				 "asq"             = "Age of provider squared",
-				 "bmi"             = "Body Mass Index",
-				 "asian"           = "Asian",
-				 "black"           = "Black",
-				 "hispanic"        = "Hispanic",
-				 "other"           = "Other",
-				 "schooling"       = "Imputed Years of Schooling",
-				 "cohab"           = "Cohabitating (living with a partner) but unmarried",
-				 "married"         = "Currently married and living with your spouse",
-				 "divorced"        = "Divorced and not remarried",
-				 "separated"       = "Married but not currently living with your spouse")
-		
+         "llength"         = "Ln(Length)",
+         "reg"             = "Client was a Regular",
+         "age_cl"          = "Age of Client",
+         "asq_cl"          = "Age of Client Squared",
+         "appearance_cl"   = "Client Attractiveness (Scale of 1 to 10)",
+         "provider_second" = "Second Provider Involved",
+         "asian_cl"        = "Asian Client",
+         "black_cl"        = "Black Client",
+         "hispanic_cl"     = "Hispanic Client",
+         "othrace_cl"      = "Other Ethnicity Client",
+         "hot"             = "Met Client in Hotel",
+         "massage_cl"      = "Gave Client a Massage",
+         "age"             = "Age of provider",
+         "asq"             = "Age of provider squared",
+         "bmi"             = "Body Mass Index",
+         "asian"           = "Asian",
+         "black"           = "Black",
+         "hispanic"        = "Hispanic",
+         "other"           = "Other",
+         "schooling"       = "Imputed Years of Schooling",
+         "cohab"           = "Cohabitating (living with a partner) but unmarried",
+         "married"         = "Currently married and living with your spouse",
+         "divorced"        = "Divorced and not remarried",
+         "separated"       = "Married but not currently living with your spouse")
+
 ## Regression table
 mods = list("POLS" = ols, "FE" = fe, "Demeaned OLS" = ols_demean)
 # etable(mods, dict = dict) ## Native fixest regression table function
 msummary(
-	mods,
-	coef_map = dict,
-	stars = TRUE,
-	gof_omit = "R2|IC|Log|F"
-	)
+  mods,
+  coef_map = dict,
+  stars = TRUE,
+  gof_omit = "R2|IC|Log|F"
+  )
 ```
 
 #### QUESTIONS

@@ -62,42 +62,42 @@ data("texas", package = "causaldata")
 #-- Synthetic control
 cli::cli_h1("Run synthetic control")
 texas_synth =
-	texas %>%
-	## Initialize the synthetic control object
+  texas %>%
+  ## Initialize the synthetic control object
 	synthetic_control(
-		outcome = bmprison,      ## outcome
-		unit = state,            ## unit index in the panel data
-		time = year,             ## time index in the panel data
-		i_unit = 'Texas',        ## unit where the intervention occurred
-		i_time = 1994,           ## time period when the intervention occurred
-		generate_placebos = TRUE ## generate placebo synthetic controls (for inference)
-		) %>%
-	## Generate the aggregate predictors used to fit the weights...
+	  outcome = bmprison,      ## outcome
+	  unit = state,            ## unit index in the panel data
+	  time = year,             ## time index in the panel data
+	  i_unit = 'Texas',        ## unit where the intervention occurred
+	  i_time = 1994,           ## time period when the intervention occurred
+	  generate_placebos = TRUE ## generate placebo synthetic controls (for inference)
+	  ) %>%
+  ## Generate the aggregate predictors used to fit the weights...
 	generate_predictor(
-		time_window = 1988,	
-		bmprison = mean(bmprison, na.rm=TRUE)
-		) %>%
-	## 1990 vars 
+	  time_window = 1988,	
+	  bmprison = mean(bmprison, na.rm=TRUE)
+	  ) %>%
+  ## 1990 vars 
 	generate_predictor(
-		time_window = 1990,
-		alcohol = mean(alcohol, na.rm=TRUE),
-		perc1519 = mean(perc1519, na.rm=TRUE)) %>%
-	## 1990 - 1991 vars
-	generate_predictor(
-		time_window = 1990:1991,
-		aidscapita = mean(aidscapita, na.rm=TRUE)
-		) %>%
-	## 1990:1992 vars
-	generate_predictor(
-		time_window = 1990:1992,
-		black = mean(black, na.rm=TRUE)
-		) %>%
-	## Generate the fitted weights for the synthetic control
-	generate_weights(
-		optimization_window = 1985:1993 ## years to use in the optimization task
-		) %>%
-	## Generate the synthetic control
-	generate_control()
+	  time_window = 1990,
+	  alcohol = mean(alcohol, na.rm=TRUE),
+	  perc1519 = mean(perc1519, na.rm=TRUE)) %>%
+  ## 1990 - 1991 vars
+  generate_predictor(
+    time_window = 1990:1991,
+    aidscapita = mean(aidscapita, na.rm=TRUE)
+    ) %>%
+  ## 1990:1992 vars
+  generate_predictor(
+    time_window = 1990:1992,
+    black = mean(black, na.rm=TRUE)
+    ) %>%
+  ## Generate the fitted weights for the synthetic control
+  generate_weights(
+    optimization_window = 1985:1993 ## years to use in the optimization task
+    ) %>%
+  ## Generate the synthetic control
+  generate_control()
 
 
 #-- Plots

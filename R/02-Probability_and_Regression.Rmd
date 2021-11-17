@@ -55,10 +55,10 @@ library(modelsummary) ## Nice regression tables
 ## Some options
 theme_set(theme_minimal())          ## ggplot2 theme
 options(
-	datatable.print.class = TRUE,     ## data.table print options
-	datatable.print.keys = TRUE,      ## ditto
-	tutorial.exercise.timelimit = 600 ## 10 minute code time limit
-	)
+  datatable.print.class = TRUE,     ## data.table print options
+  datatable.print.keys = TRUE,      ## ditto
+  tutorial.exercise.timelimit = 600 ## 10 minute code time limit
+  )
 ```
 
 
@@ -87,13 +87,13 @@ d1[, ':=' (uhat = residuals(mod1),
 cli::cli_alert_success("Plotting Line of Best Fit")
 
 ggplot(d1, aes(x = x, y = y)) + 
-    labs(title = "OLS Regression Line") +
-    geom_point(size = 0.05, color = "black", alpha = 0.5) +
-    geom_smooth(method = "lm", color = "black") +
-    annotate("text", x = -1.5, y = 30, color = "red", 
-             label = paste("Intercept = ", round(coef(mod1)[1], 4))) +
-    annotate("text", x = 1.5, y = -30, color = "blue", 
-             label = paste("Slope =", round(coef(mod1)[2], 4)))
+  labs(title = "OLS Regression Line") +
+  geom_point(size = 0.05, color = "black", alpha = 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  annotate("text", x = -1.5, y = 30, color = "red", 
+           label = paste("Intercept = ", round(coef(mod1)[1], 4))) +
+  annotate("text", x = 1.5, y = -30, color = "blue", 
+           label = paste("Slope =", round(coef(mod1)[2], 4)))
 ```
 
 #### Questions:
@@ -200,14 +200,14 @@ d = data.table(sim = rep(1:n_sims, each = n),
 setorder(d, sim, cl_id) ## optional
 ## Generate IID x var and errors
 d[, ':=' (x = rnorm(length(sim)),
-					e = rnorm(length(sim), sd = sqrt(1 - rho)))]
+          e = rnorm(length(sim), sd = sqrt(1 - rho)))]
 ## Generate clustered x var and errors
 d[, ':=' (x_cl = x + rnorm(n/n_cl),
-					e_cl = e + rnorm(n/n_cl, sd = sqrt(rho))),
-	by = .(sim, cl_id)]
+          e_cl = e + rnorm(n/n_cl, sd = sqrt(rho))),
+  by = .(sim, cl_id)]
 ## Generate both IID and clustered outcome vars
 d[, ':=' (y    = b0 + b1*x    + e,
-					y_cl = b0 + b1*x_cl + e_cl)]
+          y_cl = b0 + b1*x_cl + e_cl)]
 
 ## Simulation function. Note that this will estimation four models, combining
 ## clustered and non-clustered data with clustered and IID standard errors.
@@ -230,12 +230,13 @@ sim_func =
               s$dgp = paste('DGP:', fifelse(as.character(m$fml[2])=='y_cl', 'Clustered', 'IID'))
               s$se = paste('SE:', fifelse(!is.null(cvar), 'Clustered', 'IID'))
               return(s)
-              }
-            ))
+            }
+          ))
           }
         ))
     return(ret)
   }
+
 ```
  
 Now we run the simulation. This will take a few seconds.
