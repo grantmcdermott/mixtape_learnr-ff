@@ -16,6 +16,13 @@
       "Repository": "RSPM",
       "Hash": "cc8c8c4d61346cde1ca60030ff9c241f"
     },
+    "LowRankQP": {
+      "Package": "LowRankQP",
+      "Version": "1.0.4",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "b81213f24d7e2644bf7785e445b9bcce"
+    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-54",
@@ -64,6 +71,18 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "194ad71f8ed59393272a0c4be2eac215"
+    },
+    "bacondecomp": {
+      "Package": "bacondecomp",
+      "Version": "0.1.3",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "bacondecomp",
+      "RemoteUsername": "evanjflack",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "ec99dd079d00b0b94174c0519a00e5d4285e248b",
+      "Hash": "2af0555acd4a47ad1a54db779ec4ca98"
     },
     "base64enc": {
       "Package": "base64enc",
@@ -394,6 +413,13 @@
       "Repository": "RSPM",
       "Hash": "49b625e6aabe4c5f091f5850aba8ff78"
     },
+    "kernlab": {
+      "Package": "kernlab",
+      "Version": "0.9-29",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "46b2f61dadae64579e4cbe8af3c088d6"
+    },
     "knitr": {
       "Package": "knitr",
       "Version": "1.36",
@@ -499,6 +525,13 @@
       "Repository": "RSPM",
       "Hash": "5406fd37ef0bf9b88c8a4f264d6ec220"
     },
+    "optimx": {
+      "Package": "optimx",
+      "Version": "2021-10.12",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "e384e8590262bb9f6c2c8c67569c4b1a"
+    },
     "packrat": {
       "Package": "packrat",
       "Version": "0.7.0",
@@ -596,6 +629,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "30e5eba91b67f7f4d75d31de14bbfbdc"
+    },
+    "rgenoud": {
+      "Package": "rgenoud",
+      "Version": "5.8-3.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "485f0c669f0cb6e354714ed74fe490c8"
     },
     "rlang": {
       "Package": "rlang",
@@ -748,6 +788,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "7243004a708d06d4716717fa1ff5b2fe"
+    },
+    "tidysynth": {
+      "Package": "tidysynth",
+      "Version": "0.1.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "ccf5a439186cf6760fa8a16960813410"
     },
     "tinytex": {
       "Package": "tinytex",
