@@ -51,9 +51,11 @@ library(causaldata)   ## Bundles The Mixtape datasets
 library(data.table)   ## High-performance data wrangling
 library(fixest)       ## High-performance (fixed-effects +) regressions
 library(bacondecomp)  ## Goodman-Bacon decomposition
+library(ggplot2)      ## Nice plots
 
 ## Some options
-par(family = 'HersheySans')         ## Nicer base plot font
+par(family = 'HersheySans')         ## Nicer base plot font for fixest::iplot()
+theme_set(theme_minimal())          ## ggplot2 theme
 options(
   datatable.print.class = TRUE,     ## data.table print options
   datatable.print.keys = TRUE,      ## ditto
@@ -267,9 +269,14 @@ cli::cli_h1("Goodman-Bacon decomposition")
 bacon_cas = bacon(l_homicide ~ post,
                   id_var = "sid", time_var = "year",
                   data = castle[, .(l_homicide, post, sid, year)])
-plot(estimate ~ weight, data = bacon_cas, 
-     pch=c(0,1,2)[as.factor(type)], col=c(4,6,8)[as.factor(type)],
-     main = "Goodman-Bacon decomposition", xlab = "Weight", ylab= "2x2 DD Estimate")
-abline(a = sum(bacon_cas$estimate*bacon_cas$weight), b = 0, lty = 2)
-legend("bottomright", pch=0:2, col=c(4,6,8), legend=sort(unique(bacon_cas$type)))
+
+ggplot(bacon_cas, aes(x = weight, y = estimate, shape = type, col = type)) + 
+  geom_point(size = 3, stroke = 0.9) + 
+  geom_hline(yintercept = sum(bacon_cas$estimate*bacon_cas$weight), lty = 2) +
+  scale_shape_manual(values = 21:23) +
+  labs(
+    x = "Weight", y= "2x2 DD Estimate", title = "Goodman-Bacon decomposition",
+    caption = "Note: The dashed horizontal line shows the average DD estimate." 
+    ) +
+  theme(legend.title = element_blank())
 ```
