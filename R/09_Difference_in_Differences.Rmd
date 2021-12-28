@@ -35,7 +35,6 @@ for this tutorial:
 # install.packages("learnr")
 # install.packages("cli")
 # install.packages("causaldata")
-# install.packages("haven")
 # install.packages("data.table")
 # install.packages("modelsummary")
 # install.packages("fixest")
@@ -49,9 +48,8 @@ for this tutorial:
 ## Libraries
 library(learnr)       ## Turn this Rmd file into an interactive tutorial
 library(causaldata)   ## Bundles The Mixtape datasets
-library(haven)				## Stata data types and classes
 library(data.table)   ## High-performance data wrangling
-library(fixest)       ## High-performance (fixed-effect +) regressions
+library(fixest)       ## High-performance (fixed-effects +) regressions
 library(bacondecomp)  ## Goodman-Bacon decomposition
 
 ## Some options
@@ -163,34 +161,53 @@ mtext("Note: Black female 20-24 year-olds vs. Black female 25-29 year-olds", fon
 
 ## Cheng and Hoekstra (2013)
 
-```{r castle_1, exercise=TRUE, echo=FALSE}
+```{r castle_0, exercise=TRUE, echo=FALSE}
 cli::cli_h1("CH13 data load and prep")
 
-castle = read_dta("https://raw.github.com/scunning1975/mixtape/master/castle.dta")
+data("castle", package = "causaldata")
 setDT(castle)
 
 ## GM: There are _loads_ of unused variables in this dataset, including a great
 ## many that are relics of Stata design matrix expansion (lots of dummy columns).
 ## I'm going to drop these and use the much more concise formula syntax that
 ## should be familiar to R users (i.e. factor expansion and interactions).
-drop_cols = grep("^r20|^trend|^lead|^lag|^_Iyear", names(castle), value = TRUE)
-castle[, (drop_cols) := NULL]; rm(drop_cols)
+## First, bear with me as we grab the original four region IDs, which are 
+## encoded at the end of the r20001--r20104 variables. This will take a bit
+## reshaping back and forth.
+castle = melt(castle, measure=patterns('^r20')) |>
+  dcast(... ~ substr(variable, 6, 6), sum) |>
+  setnames(paste(1:4), c('northeast', 'midwest', 'south', 'west')) |>
+  setkey(NULL)
+## Now we can create a single `region` variable
 castle[, region := fcase(northeast==1, 'northeast',
                          midwest==1, 'midwest',
                          south==1, 'south',
                          west==1, 'west')]
+## Similarly, we're going to want our treatment status variable(s) in a more
+## concise form rather than using a bunch of dummies. Let's do that quickly.
+castle[, treated := max(post), by = sid
+       ][lag0==1, treatment_date := year
+         ][treated==1, treatment_date := max(treatment_date, na.rm = TRUE), by=sid]
+# Finally, we can drop all the excess dummy columns
+drop_cols = grep("^r20|^trend|^lead|^lag", names(castle), value = TRUE)
+castle[, (drop_cols) := NULL]; rm(drop_cols)
+## GM: End of extra data prep
+```
 
-## Regression macros
+```{r castle_1, exercise=TRUE, echo=FALSE}
+## GM: Regression macros. Save our list of "control" variables as a macro to
+## keep our model formula interface clean. (Also avoids retyping if you want to
+## re-run slightly different models.)
 setFixest_fml(
-  ..xvar = ~ blackm_15_24 + whitem_15_24 + blackm_25_44 + whitem_25_44 +   ## demographics
-             l_exp_subsidy + l_exp_pubwelfare + l_police +                 ## spending
-             unemployrt + poverty + l_income + l_prisoner + l_lagprisoner  ## other vars
+  ..ctrls = ~ blackm_15_24 + whitem_15_24 + blackm_25_44 + whitem_25_44 +   ## demographics
+              l_exp_subsidy + l_exp_pubwelfare + l_police +                 ## spending
+              unemployrt + poverty + l_income + l_prisoner + l_lagprisoner  ## other vars
   )
 
 
 #-- DD estimate of castle doctrine ("stand your ground") expansion on homicides
 cli::cli_h1("CH13 DD regression")
-dd_cas = feols(l_homicide ~ post + ..xvar | sid[year] + region^year, 
+dd_cas = feols(l_homicide ~ post + ..ctrls | sid[year] + region^year, 
                data = castle, weights = ~popwt, vcov = ~sid)
 summary(dd_cas)
 ```
@@ -209,7 +226,7 @@ cli::cli_h1("CH13 event study")
 ## GM: For the event-study we're going to recast things i.t.o of relative time
 ## until treatment. Note that the never treated group will get a fake (far-off)
 ## date.
-castle[, ':=' (time_til = year - treatment_date, treated = max(post)), by = sid
+castle[, time_til := year - treatment_date, by = sid
        ][is.na(time_til), time_til := 1000]
 
 ## GM: Normally I'd set the treatment reference period at -1, but I'm just going
@@ -239,7 +256,7 @@ iplot(es_cas, ref.line = 0,
 mtext("Same plot as last time, just different aesthetics...", font = 3)
 ```
 
-**GM: `iplot()` is _extremely_ customizable. But you might also want to check out [`ggiplot`](https://github.com/grantmcdermott/ggiplot) for a ggplot2 equivalent.**
+**GM: `iplot()` is _extremely_ customizable. But you might also want to check out [`ggiplot`](https://grantmcdermott.com/ggiplot) for a ggplot2 equivalent.**
 
 ### Bonus: Goodman-Bacon decomposition
 
@@ -247,8 +264,8 @@ mtext("Same plot as last time, just different aesthetics...", font = 3)
 cli::cli_h1("Goodman-Bacon decomposition")
 
 bacon_cas = bacon(l_homicide ~ post,
-                  id_var = "state", time_var = "year",
-                  data = castle[, .(l_homicide, post, state, year)])
+                  id_var = "sid", time_var = "year",
+                  data = castle[, .(l_homicide, post, sid, year)])
 plot(estimate ~ weight, data = bacon_cas, 
      pch=c(0,1,2)[as.factor(type)], col=c(4,6,8)[as.factor(type)],
      main = "Goodman-Bacon decomposition", xlab = "Weight", ylab= "2x2 DD Estimate")

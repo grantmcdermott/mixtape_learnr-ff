@@ -48,7 +48,7 @@ for this tutorial:
 library(learnr)       ## Turn this Rmd file into an interactive tutorial
 library(causaldata)   ## Bundles The Mixtape datasets
 library(data.table)   ## High-performance data wrangling
-library(fixest)       ## High-performance (fixed-effect +) regressions
+library(fixest)       ## High-performance (fixed-effects +) regressions
 library(ggplot2)      ## Nice plots
 library(modelsummary) ## Nice regression tables
 

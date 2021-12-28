@@ -35,7 +35,6 @@ for this tutorial:
 # install.packages("learnr")
 # install.packages("cli")
 # install.packages("causaldata")
-# install.packages("haven")
 # install.packages("data.table")
 # install.packages("modelsummary")
 # install.packages("fixest")
@@ -47,9 +46,8 @@ for this tutorial:
 ## Libraries
 library(learnr)       ## Turn this Rmd file into an interactive tutorial
 library(causaldata)   ## Bundles The Mixtape datasets
-library(haven)				## Stata data types and classes
 library(data.table)   ## High-performance data wrangling
-library(fixest)       ## High-performance (fixed-effect +) regressions
+library(fixest)       ## High-performance (fixed-effects +) regressions
 library(modelsummary) ## Nice regression tables
 
 ## Some options
