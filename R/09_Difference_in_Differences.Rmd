@@ -174,9 +174,10 @@ setDT(castle)
 ## First, bear with me as we grab the original four region IDs, which are 
 ## encoded at the end of the r20001--r20104 variables. This will take a bit
 ## reshaping back and forth.
+rdict = c('1'='northeast', '2'='midwest', '3'='south', '4'='west')
 castle = melt(castle, measure=patterns('^r20')) |>
   dcast(... ~ substr(variable, 6, 6), sum) |>
-  setnames(paste(1:4), c('northeast', 'midwest', 'south', 'west')) |>
+  setnames(names(rdict), rdict) |>
   setkey(NULL)
 ## Now we can create a single `region` variable
 castle[, region := fcase(northeast==1, 'northeast',
@@ -186,11 +187,11 @@ castle[, region := fcase(northeast==1, 'northeast',
 ## Similarly, we're going to want our treatment status variable(s) in a more
 ## concise form rather than using a bunch of dummies. Let's do that quickly.
 castle[, treated := max(post), by = sid
-       ][lag0==1, treatment_date := year
-         ][treated==1, treatment_date := max(treatment_date, na.rm = TRUE), by=sid]
+       ][lag0==1, treatment_year := year
+         ][treated==1, treatment_year := max(treatment_year, na.rm=TRUE), by=sid]
 # Finally, we can drop all the excess dummy columns
 drop_cols = grep("^r20|^trend|^lead|^lag", names(castle), value = TRUE)
-castle[, (drop_cols) := NULL]; rm(drop_cols)
+castle[, c(rdict, drop_cols) := NULL][]; rm(rdict, drop_cols)
 ## GM: End of extra data prep
 ```
 
@@ -226,7 +227,7 @@ cli::cli_h1("CH13 event study")
 ## GM: For the event-study we're going to recast things i.t.o of relative time
 ## until treatment. Note that the never treated group will get a fake (far-off)
 ## date.
-castle[, time_til := year - treatment_date, by = sid
+castle[, time_til := year - treatment_year, by = sid
        ][is.na(time_til), time_til := 1000]
 
 ## GM: Normally I'd set the treatment reference period at -1, but I'm just going
